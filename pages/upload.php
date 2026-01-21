@@ -627,4 +627,4 @@ document.getElementById('bundleMode').addEventListener('change', e=>{
 });
 </script>
 
-<?php require __DIR__.'/templates/footer.php'; ?>
+<?php require __DIR__.'/../templates/footer.php'; ?>
