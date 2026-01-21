@@ -224,6 +224,7 @@ const phaseTextEl = document.getElementById('phaseText');
 const mailBoxEl = document.getElementById('mailBox');
 const mailTplEl = document.getElementById('mailTemplate');
 const copyMailBtn = document.getElementById('copyMailBtn');
+let userSetBundleMode = false;
 
 function setPhase(text){
   if(phaseTextEl) phaseTextEl.textContent = text || '';
@@ -260,6 +261,30 @@ function setResult(html){
   resultEl.innerHTML = html || '';
 }
 
+function isArchiveName(name){
+  const lower = String(name || '').toLowerCase();
+  const archiveExts = [
+    '.zip', '.rar', '.7z', '.tar', '.tar.gz', '.tgz',
+    '.tar.bz2', '.tbz2', '.tar.xz', '.txz'
+  ];
+  return archiveExts.some(ext => lower.endsWith(ext));
+}
+
+function updateBundleOptionsVisibility(){
+  const bundleOptions = document.getElementById('bundleOptions');
+  if (bundleOptions && bundleModeEl) {
+    bundleOptions.style.display = bundleModeEl.checked ? 'block' : 'none';
+  }
+}
+
+function autoDisableBundleForSingleArchive(){
+  if (!bundleModeEl || userSetBundleMode) return;
+  if (filesToUpload.length === 1 && isArchiveName(filesToUpload[0]?.name)) {
+    bundleModeEl.checked = false;
+    updateBundleOptionsVisibility();
+  }
+}
+
 function showError(title, details){
   const d = details ? `<pre style="white-space:pre-wrap;opacity:.9">${escapeHtml(details)}</pre>` : '';
   setResult(`<div style="padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,0,0,.08)">
@@ -287,6 +312,7 @@ function updateProgress(ratio){
 }
 
 function handleFileList(fileList){
+  userSetBundleMode = false;
   filesToUpload = Array.from(fileList || []);
   if(filesToUpload.length === 0){
     dropZone.textContent = 'Aucun fichier détecté';
@@ -295,6 +321,7 @@ function handleFileList(fileList){
   const total = filesToUpload.reduce((a,f)=>a+(f.size||0),0);
   const maybeFolder = filesToUpload.some(f=> (f.relativePath && String(f.relativePath).includes('/')) || (f.webkitRelativePath && f.webkitRelativePath.length>0));
   dropZone.innerHTML = `<b>${filesToUpload.length}</b> fichier(s) sélectionné(s) (${formatBytes(total)})` + (maybeFolder ? ` — dossier détecté` : ``);
+  autoDisableBundleForSingleArchive();
 }
 
 function formatBytes(bytes){
@@ -623,7 +650,8 @@ startBtn.addEventListener('click', (e)=>{ e.preventDefault(); startUpload(); });
 
 // UI bundle toggle
 document.getElementById('bundleMode').addEventListener('change', e=>{
-    document.getElementById('bundleOptions').style.display = e.target.checked ? 'block':'none';
+    userSetBundleMode = true;
+    updateBundleOptionsVisibility();
 });
 </script>
 
