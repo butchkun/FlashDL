@@ -1,0 +1,276 @@
+/* assets/style.css */
+:root{
+  --bg1:#071726;
+  --bg2:#0b2a44;
+  --line: rgba(255,255,255,.25);
+  --text: rgba(255,255,255,.92);
+  --muted: rgba(255,255,255,.65);
+  --accent: rgba(255,255,255,.9);
+  --card: rgba(8,18,28,.60);
+  --cardBorder: rgba(255,255,255,.12);
+  --btnBg: rgba(0,0,0,.25);
+  --btnBorder: rgba(255,255,255,.55);
+  --shadow: 0 16px 50px rgba(0,0,0,.45);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family: "Segoe UI", Roboto, Arial, system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 70% 30%, rgba(67,167,255,.12), transparent 60%),
+              radial-gradient(900px 500px at 20% 50%, rgba(67,167,255,.08), transparent 60%),
+              linear-gradient(140deg, var(--bg1), var(--bg2));
+  overflow-x:hidden;
+}
+
+/* --- Background layers (bokeh + binary) --- */
+.page-bg{
+  position:fixed; inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(circle at 75% 20%, rgba(109,198,255,.18), transparent 20%),
+    radial-gradient(circle at 86% 30%, rgba(109,198,255,.14), transparent 24%),
+    radial-gradient(circle at 70% 55%, rgba(109,198,255,.12), transparent 28%),
+    radial-gradient(circle at 92% 62%, rgba(109,198,255,.10), transparent 26%),
+    radial-gradient(circle at 62% 18%, rgba(109,198,255,.08), transparent 22%),
+    radial-gradient(circle at 80% 80%, rgba(109,198,255,.10), transparent 26%),
+    linear-gradient(140deg, var(--bg1), var(--bg2));
+  filter:saturate(1.05) contrast(1.05);
+}
+
+.binary-overlay{
+  position:fixed; inset:0;
+  z-index:-1;
+  pointer-events:none;
+  opacity:.35;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.0) 55%);
+}
+
+.binary-overlay::before{
+  content:"";
+  position:absolute; inset:-40px 0 -40px -40px;
+  width:55%;
+  background:
+    repeating-linear-gradient(0deg,
+      rgba(255,255,255,.08) 0 2px,
+      transparent 2px 16px),
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.06) 0 1px,
+      transparent 1px 18px);
+  filter: blur(.2px);
+  opacity:.55;
+}
+
+.binary-overlay::after{
+  /* “digits” stylisés */
+  content:"0111011001000110100110010011010001100100010110010011";
+  position:absolute;
+  left:40px; top:80px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size:140px;
+  letter-spacing:14px;
+  line-height:1.05;
+  white-space:pre-wrap;
+  width:45%;
+  opacity:.20;
+  transform: translate3d(0,0,0);
+  filter: blur(.4px);
+}
+
+/* --- Top bar (like screenshot) --- */
+.topbar{
+  height:76px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 34px;
+  border-bottom:1px solid var(--line);
+  background: linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0));
+  backdrop-filter: blur(3px);
+}
+
+.brand{
+  display:flex; align-items:center; gap:14px;
+  min-width:220px;
+}
+.brand-mark{
+  width:38px; height:38px;
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:999px;
+  display:grid; place-items:center;
+  color:rgba(255,255,255,.9);
+  font-weight:600;
+}
+.brand-name{
+  font-weight:600;
+  letter-spacing:.6px;
+  opacity:.92;
+}
+
+.top-actions{
+  display:flex; align-items:center; gap:12px;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 16px;
+  border-radius:10px;
+  border:1px solid var(--btnBorder);
+  color:var(--text);
+  background:var(--btnBg);
+  text-decoration:none;
+  cursor:pointer;
+  transition: transform .05s ease, background .15s ease, opacity .15s ease;
+}
+.btn:hover{ background: rgba(255,255,255,.10); }
+.btn:active{ transform: translateY(1px); }
+.btn.secondary{
+  border-color: rgba(255,255,255,.25);
+  opacity:.9;
+}
+
+/* --- Main container --- */
+.wrap{
+  max-width:1200px;
+  margin:0 auto;
+  padding: 22px 34px 60px;
+}
+
+/* Hero layout like Flash Copy home */
+.hero{
+  margin-top: 26px;
+  display:grid;
+  grid-template-columns: 1.2fr 28px 1.8fr;
+  gap: 26px;
+  align-items:center;
+  min-height: calc(100vh - 160px);
+}
+
+.hero-left{
+  color:var(--muted);
+  padding-left: 10px;
+}
+
+.hero-left .logo-big{
+  font-size:56px;
+  font-weight:300;
+  letter-spacing:1px;
+  line-height:0.92;
+  margin: 0 0 14px;
+  opacity:.92;
+}
+.hero-left .logo-big span{display:block; font-weight:300;}
+.hero-left .services{
+  margin-top: 18px;
+  font-size:14px;
+  line-height:1.9;
+  opacity:.9;
+}
+.hero-left .desc{
+  margin-top: 18px;
+  max-width: 420px;
+  font-size:13px;
+  line-height:1.7;
+  opacity:.9;
+}
+.hero-left .cta{
+  margin-top:18px;
+}
+.hero-left .cta .btn{
+  border-color: rgba(255,255,255,.35);
+  background: rgba(255,255,255,.08);
+}
+
+/* separator vertical line */
+.hero-sep{
+  width:2px;
+  height: 420px;
+  background: rgba(255,255,255,.35);
+  justify-self:center;
+  opacity:.85;
+}
+
+/* Quote block */
+.hero-right{
+  padding-right: 10px;
+}
+.quote{
+  font-size:46px;
+  font-weight:200;
+  letter-spacing:1px;
+  line-height:1.25;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.quote .q{opacity:.95}
+.quote small{
+  display:block;
+  margin-top:18px;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:.5px;
+  opacity:.75;
+  text-transform:none;
+}
+
+/* Cards for login/upload/admin on same background */
+.card{
+  background: var(--card);
+  border:1px solid var(--cardBorder);
+  border-radius:16px;
+  box-shadow: var(--shadow);
+  padding:18px;
+}
+
+.row{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.row > *{flex:1; min-width:240px;}
+
+input[type=text], input[type=password], input[type=file]{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  background: rgba(0,0,0,.25);
+  color: var(--text);
+}
+label{display:block; margin-bottom:6px; opacity:.9}
+.muted{color:var(--muted); font-size:12px}
+.error{background:rgba(255,0,0,.10); border:1px solid rgba(255,0,0,.20); padding:10px; border-radius:12px}
+.ok{background:rgba(0,255,140,.10); border:1px solid rgba(0,255,140,.20); padding:10px; border-radius:12px}
+
+/* Tables */
+table{width:100%; border-collapse:collapse; margin-top:10px}
+th,td{border-bottom:1px solid rgba(255,255,255,.10); padding:10px; text-align:left; font-size:13px; vertical-align:top}
+code{background:rgba(255,255,255,.10); padding:2px 6px; border-radius:999px}
+
+/* Responsive */
+@media (max-width: 980px){
+  .hero{grid-template-columns: 1fr; gap:18px; min-height:auto}
+  .hero-sep{display:none}
+  .quote{font-size:34px}
+  .topbar{padding:0 18px}
+  .wrap{padding:18px}
+}
+
+.hero-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.hero-visual img {
+    max-width: 480px;
+    width: 100%;
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
