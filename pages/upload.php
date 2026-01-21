@@ -181,6 +181,7 @@ const CSRF = <?= json_encode(csrf_token()) ?>;
 
 let filesToUpload = [];
 let abortFlag = false;
+const activeTokens = new Set();
 
 const dropZone = document.getElementById('dropZone');
 const filePicker = document.getElementById('filePicker');
@@ -259,6 +260,37 @@ copyMailBtn && copyMailBtn.addEventListener('click', async ()=>{
 
 function setResult(html){
   resultEl.innerHTML = html || '';
+}
+
+function addActiveToken(token){
+  if (token) activeTokens.add(token);
+}
+
+function removeActiveToken(token){
+  if (token) activeTokens.delete(token);
+}
+
+function resetSelectionUi(){
+  filesToUpload = [];
+  userSetBundleMode = false;
+  dropZone.textContent = 'Aucun fichier détecté';
+  updateProgress(0);
+  setPhase('Prêt.');
+  setResult('');
+  if (mailBoxEl) mailBoxEl.style.display = 'none';
+}
+
+async function abortActiveSessions(){
+  const tokens = Array.from(activeTokens);
+  activeTokens.clear();
+  if (tokens.length === 0) return;
+  await Promise.all(tokens.map(async (token)=>{
+    try{
+      await apiCall({ action:'abort', token });
+    }catch(e){
+      // best-effort abort; ignore errors
+    }
+  }));
 }
 
 function isArchiveName(name){
@@ -414,6 +446,8 @@ dropZone.addEventListener('drop', async (e)=>{
 cancelBtn.addEventListener('click', ()=>{
   abortFlag = true;
   setResult('<i>Annulation demandée…</i>');
+  abortActiveSessions().finally(()=>{});
+  resetSelectionUi();
 });
 
 // Simple JSON call (x-www-form-urlencoded)
@@ -539,6 +573,7 @@ async function startUpload(){
           return;
         }
         const token = init.token;
+        addActiveToken(token);
 
         // CHUNKS
         const totalChunks = Math.ceil(Math.max(1, file.size) / CHUNK_SIZE);
@@ -565,6 +600,7 @@ async function startUpload(){
           showError('Finalize échoué', JSON.stringify(fin, null, 2));
           return;
         }
+        removeActiveToken(token);
         showLink(fin.url);
         setMailTemplate(fin.url, password);
         setPhase('Terminé.');
@@ -595,6 +631,7 @@ async function startUpload(){
       return;
     }
     const token = initB.token;
+    addActiveToken(token);
 
     // Upload each file as chunk_bundle
     let fileIndex = 0;
@@ -634,6 +671,7 @@ async function startUpload(){
       showError('Finalize bundle échoué', JSON.stringify(finB, null, 2));
       return;
     }
+    removeActiveToken(token);
     showLink(finB.url);
     setMailTemplate(finB.url, password);
     setPhase('Terminé.');
