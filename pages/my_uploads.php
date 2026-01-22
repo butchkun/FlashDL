@@ -66,13 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'purge_older') {
         $days = (int)($_POST['days'] ?? 30);
         if ($days < 1) $days = 1;
-        $cutoff = date('Y-m-d H:i:s', time() - ($days * 86400));
+        $cutoff = date('c', time() - ($days * 86400));
 
         $sel = $pdo->prepare("SELECT id, stored_relpath, bytes FROM uploads WHERE user_id=:uid AND deleted_at IS NULL AND created_at < :cutoff");
         $sel->execute([':uid'=>(int)$u['id'], ':cutoff'=>$cutoff]);
         $toDel = $sel->fetchAll() ?: [];
 
-        $upd = $pdo->prepare("UPDATE uploads SET deleted_at=NOW() WHERE id=:id AND user_id=:uid");
+        $upd = $pdo->prepare("UPDATE uploads SET deleted_at=:t WHERE id=:id AND user_id=:uid");
         $count = 0;
         $bytes = 0;
         foreach ($toDel as $up) {
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $files = array_values(array_diff(scandir($parent) ?: [], ['.','..']));
                 if (count($files) === 0) @rmdir($parent);
             }
-            $upd->execute([':id'=>(string)$up['id'], ':uid'=>(int)$u['id']]);
+            $upd->execute([':t'=>date('c'), ':id'=>(string)$up['id'], ':uid'=>(int)$u['id']]);
             $count++;
         }
 

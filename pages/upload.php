@@ -181,6 +181,7 @@ const CSRF = <?= json_encode(csrf_token()) ?>;
 
 let filesToUpload = [];
 let abortFlag = false;
+const activeTokens = new Set();
 
 const dropZone = document.getElementById('dropZone');
 const filePicker = document.getElementById('filePicker');
@@ -224,6 +225,7 @@ const phaseTextEl = document.getElementById('phaseText');
 const mailBoxEl = document.getElementById('mailBox');
 const mailTplEl = document.getElementById('mailTemplate');
 const copyMailBtn = document.getElementById('copyMailBtn');
+let userSetBundleMode = false;
 
 function setPhase(text){
   if(phaseTextEl) phaseTextEl.textContent = text || '';
@@ -260,6 +262,61 @@ function setResult(html){
   resultEl.innerHTML = html || '';
 }
 
+function addActiveToken(token){
+  if (token) activeTokens.add(token);
+}
+
+function removeActiveToken(token){
+  if (token) activeTokens.delete(token);
+}
+
+function resetSelectionUi(){
+  filesToUpload = [];
+  userSetBundleMode = false;
+  dropZone.textContent = 'Aucun fichier détecté';
+  updateProgress(0);
+  setPhase('Prêt.');
+  setResult('');
+  if (mailBoxEl) mailBoxEl.style.display = 'none';
+}
+
+async function abortActiveSessions(){
+  const tokens = Array.from(activeTokens);
+  activeTokens.clear();
+  if (tokens.length === 0) return;
+  await Promise.all(tokens.map(async (token)=>{
+    try{
+      await apiCall({ action:'abort', token });
+    }catch(e){
+      // best-effort abort; ignore errors
+    }
+  }));
+}
+
+function isArchiveName(name){
+  const lower = String(name || '').toLowerCase();
+  const archiveExts = [
+    '.zip', '.rar', '.7z', '.tar', '.tar.gz', '.tgz',
+    '.tar.bz2', '.tbz2', '.tar.xz', '.txz'
+  ];
+  return archiveExts.some(ext => lower.endsWith(ext));
+}
+
+function updateBundleOptionsVisibility(){
+  const bundleOptions = document.getElementById('bundleOptions');
+  if (bundleOptions && bundleModeEl) {
+    bundleOptions.style.display = bundleModeEl.checked ? 'block' : 'none';
+  }
+}
+
+function autoDisableBundleForSingleArchive(){
+  if (!bundleModeEl || userSetBundleMode) return;
+  if (filesToUpload.length === 1 && isArchiveName(filesToUpload[0]?.name)) {
+    bundleModeEl.checked = false;
+    updateBundleOptionsVisibility();
+  }
+}
+
 function showError(title, details){
   const d = details ? `<pre style="white-space:pre-wrap;opacity:.9">${escapeHtml(details)}</pre>` : '';
   setResult(`<div style="padding:10px;border:1px solid rgba(255,255,255,.15);border-radius:8px;background:rgba(255,0,0,.08)">
@@ -287,6 +344,7 @@ function updateProgress(ratio){
 }
 
 function handleFileList(fileList){
+  userSetBundleMode = false;
   filesToUpload = Array.from(fileList || []);
   if(filesToUpload.length === 0){
     dropZone.textContent = 'Aucun fichier détecté';
@@ -295,6 +353,7 @@ function handleFileList(fileList){
   const total = filesToUpload.reduce((a,f)=>a+(f.size||0),0);
   const maybeFolder = filesToUpload.some(f=> (f.relativePath && String(f.relativePath).includes('/')) || (f.webkitRelativePath && f.webkitRelativePath.length>0));
   dropZone.innerHTML = `<b>${filesToUpload.length}</b> fichier(s) sélectionné(s) (${formatBytes(total)})` + (maybeFolder ? ` — dossier détecté` : ``);
+  autoDisableBundleForSingleArchive();
 }
 
 function formatBytes(bytes){
@@ -387,6 +446,8 @@ dropZone.addEventListener('drop', async (e)=>{
 cancelBtn.addEventListener('click', ()=>{
   abortFlag = true;
   setResult('<i>Annulation demandée…</i>');
+  abortActiveSessions().finally(()=>{});
+  resetSelectionUi();
 });
 
 // Simple JSON call (x-www-form-urlencoded)
@@ -512,6 +573,7 @@ async function startUpload(){
           return;
         }
         const token = init.token;
+        addActiveToken(token);
 
         // CHUNKS
         const totalChunks = Math.ceil(Math.max(1, file.size) / CHUNK_SIZE);
@@ -538,6 +600,7 @@ async function startUpload(){
           showError('Finalize échoué', JSON.stringify(fin, null, 2));
           return;
         }
+        removeActiveToken(token);
         showLink(fin.url);
         setMailTemplate(fin.url, password);
         setPhase('Terminé.');
@@ -568,6 +631,7 @@ async function startUpload(){
       return;
     }
     const token = initB.token;
+    addActiveToken(token);
 
     // Upload each file as chunk_bundle
     let fileIndex = 0;
@@ -607,6 +671,7 @@ async function startUpload(){
       showError('Finalize bundle échoué', JSON.stringify(finB, null, 2));
       return;
     }
+    removeActiveToken(token);
     showLink(finB.url);
     setMailTemplate(finB.url, password);
     setPhase('Terminé.');
@@ -623,8 +688,9 @@ startBtn.addEventListener('click', (e)=>{ e.preventDefault(); startUpload(); });
 
 // UI bundle toggle
 document.getElementById('bundleMode').addEventListener('change', e=>{
-    document.getElementById('bundleOptions').style.display = e.target.checked ? 'block':'none';
+    userSetBundleMode = true;
+    updateBundleOptionsVisibility();
 });
 </script>
 
-<?php require __DIR__.'/templates/footer.php'; ?>
+<?php require __DIR__.'/../templates/footer.php'; ?>
